@@ -1,0 +1,163 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: audio-scribe-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-audio_scribe}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - audio-scribe-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: audio-scribe-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - audio-scribe-net
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: audio-scribe-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - audio-scribe-net
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: audio-scribe-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/audio-files || true;
+      /usr/bin/mc policy set public myminio/audio-files || true;
+      exit 0;
+      "
+    networks:
+      - audio-scribe-net
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: audio-scribe-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-audio_scribe}
+      REDIS_URL: redis://redis:6379
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - audio-scribe-net
+    restart: unless-stopped
+
+  # NOTE: The transcription worker uses mlx-whisper, which only runs on Apple
+  # Silicon (the MLX framework has no Linux/CUDA build). It therefore CANNOT run
+  # in this Linux container — run it natively on the host instead:
+  #     ./scripts/run-worker.sh
+  # This service is kept behind the "containerized-worker" profile so a plain
+  # `docker-compose up` does not try to build/start it. Only enable it if you
+  # swap mlx-whisper back out for a Linux-compatible engine (e.g. faster-whisper).
+  worker:
+    profiles: ["containerized-worker"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: audio-scribe-worker
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-audio_scribe}
+      REDIS_URL: redis://redis:6379
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      WHISPER_MODEL: ${WHISPER_MODEL:-mlx-community/whisper-large-v3-mlx}
+      WHISPER_LANGUAGE: ${WHISPER_LANGUAGE:-auto}
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /tmp/audio-processing:/tmp/audio-processing
+      - /tmp/whisper-models:/tmp/whisper-models
+    command: python worker.py
+    networks:
+      - audio-scribe-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: audio-scribe-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - audio-scribe-net
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  audio-scribe-net:
+    driver: bridge

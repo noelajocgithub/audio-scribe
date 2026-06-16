@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  @apply box-border;
+}
+
+html,
+body,
+#root {
+  @apply h-full w-full;
+}
+
+body {
+  @apply text-slate-100 antialiased;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Deep, layered studio backdrop. */
+  background-color: #07071a;
+  background-image:
+    radial-gradient(1100px 700px at 8% -10%, rgba(139, 92, 246, 0.28), transparent 60%),
+    radial-gradient(1000px 600px at 100% 0%, rgba(236, 72, 153, 0.22), transparent 55%),
+    radial-gradient(1200px 800px at 50% 120%, rgba(34, 211, 238, 0.16), transparent 60%),
+    linear-gradient(180deg, #0a0a1f 0%, #07071a 100%);
+  background-attachment: fixed;
+}
+
+@layer components {
+  /* Frosted, dimensional glass surface. */
+  .glass {
+    @apply rounded-3xl border border-white/10 bg-white/[0.06] shadow-glass backdrop-blur-xl;
+  }
+  .glass-soft {
+    @apply rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent;
+  }
+  /* Raised gradient button with glow + press depth. */
+  .btn-grad {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl
+      bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 px-5 py-2.5
+      font-semibold text-white shadow-lift transition-all duration-200
+      hover:-translate-y-0.5 hover:shadow-glow active:translate-y-0
+      disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none disabled:hover:translate-y-0;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/10
+      bg-white/5 px-4 py-2 font-medium text-slate-200 transition-all duration-200
+      hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/10
+      disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-rose-400/30
+      bg-rose-500/10 px-4 py-2 font-medium text-rose-200 transition-all duration-200
+      hover:-translate-y-0.5 hover:bg-rose-500/20 disabled:opacity-40;
+  }
+  .input-glass {
+    @apply w-full rounded-xl border border-white/10 bg-black/30 px-4 py-2.5 text-slate-100
+      placeholder-slate-500 shadow-inset outline-none transition
+      focus:border-violet-400/60 focus:ring-2 focus:ring-violet-500/30;
+  }
+}
+
+/* Custom audio seek slider. */
+.audio-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+.audio-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.35);
+}
+.audio-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.35);
+}
+
+/* Themed scrollbars to match the dark studio aesthetic. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.6), rgba(236, 72, 153, 0.5));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
