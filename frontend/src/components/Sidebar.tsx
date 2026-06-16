@@ -1,5 +1,6 @@
 import React from 'react'
-import { MicIcon, WaveIcon, ArchiveIcon, SparkleIcon } from './icons'
+import { MicIcon, WaveIcon, ArchiveIcon, SparkleIcon, XIcon } from './icons'
+import { useAuth } from '../store/auth'
 
 export type Page = 'record' | 'transcribe' | 'saved'
 
@@ -15,7 +16,12 @@ const ITEMS: { id: Page; label: string; hint: string; Icon: React.FC<any> }[] = 
   { id: 'saved', label: 'Saved Transcriptions', hint: 'Library', Icon: ArchiveIcon },
 ]
 
+const ROLE_LABEL: Record<string, string> = { admin: 'Administrator', manager: 'Manager', user: 'User' }
+
 export const Sidebar: React.FC<SidebarProps> = ({ current, onNavigate, counts }) => {
+  const user = useAuth((s) => s.user)
+  const logout = useAuth((s) => s.logout)
+
   return (
     <aside className="flex w-72 shrink-0 flex-col gap-2 p-5">
       <div className="mb-6 flex items-center gap-3 px-2">
@@ -72,8 +78,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ current, onNavigate, counts })
         })}
       </nav>
 
-      <div className="mt-auto px-2 pt-6 text-[11px] leading-relaxed text-slate-500">
-        Powered by mlx-whisper · runs locally on Apple Silicon
+      {/* Account card + logout */}
+      <div className="mt-auto">
+        {user && (
+          <div className="glass-soft flex items-center gap-3 p-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-sm font-bold uppercase text-white">
+              {user.username.slice(0, 2)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold text-slate-100">{user.username}</div>
+              <div className="text-xs text-violet-300">{ROLE_LABEL[user.role] || user.role}</div>
+            </div>
+            <button
+              onClick={logout}
+              title="Sign out"
+              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white"
+            >
+              <XIcon size={18} />
+            </button>
+          </div>
+        )}
+        <div className="px-2 pt-4 text-[11px] leading-relaxed text-slate-500">
+          Powered by mlx-whisper · runs locally on Apple Silicon
+        </div>
       </div>
     </aside>
   )

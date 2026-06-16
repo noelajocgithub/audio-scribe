@@ -1,8 +1,54 @@
 """Pydantic models for request/response validation"""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
+
+Role = Literal["admin", "manager", "user"]
+UserStatus = Literal["pending", "active", "disabled"]
+
+
+# --- Auth / RBAC models ------------------------------------------------------
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    username: str = Field(..., min_length=3, max_length=100)
+    password: str = Field(..., min_length=8, max_length=128)
+
+
+class LoginRequest(BaseModel):
+    # Accepts either a username or an email address.
+    identifier: str = Field(..., min_length=1, max_length=255)
+    password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    username: str
+    role: Role
+    status: UserStatus
+    approved_by: Optional[int] = None
+    approved_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
+class AdminCreateUserRequest(BaseModel):
+    email: EmailStr
+    username: str = Field(..., min_length=3, max_length=100)
+    password: str = Field(..., min_length=8, max_length=128)
+    role: Role = "user"
+    status: UserStatus = "active"
+
+
+class RoleUpdateRequest(BaseModel):
+    role: Role
 
 
 class AudioFileBase(BaseModel):

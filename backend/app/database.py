@@ -79,28 +79,28 @@ async def execute_update(query: str, *args):
 
 
 async def run_migrations() -> None:
-    """Run database migrations using the active connection pool.
+    """Run all SQL migrations (in filename order) using the active connection pool.
 
-    Must be awaited from within the running event loop — do not wrap in
-    asyncio.run(), which would fail because the pool is bound to this loop.
+    Migrations are written to be idempotent (CREATE/ALTER ... IF [NOT] EXISTS), so
+    re-running them on each startup is safe. Must be awaited from within the running
+    event loop — do not wrap in asyncio.run(), which would fail because the pool is
+    bound to this loop.
     """
-    migration_file = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "migrations",
-        "001_initial_schema.sql"
-    )
+    import glob
 
-    if not os.path.exists(migration_file):
-        logger.warning(f"⚠️ Migration file not found: {migration_file}")
+    migrations_dir = os.path.join(os.path.dirname(__file__), "..", "migrations")
+    migration_files = sorted(glob.glob(os.path.join(migrations_dir, "*.sql")))
+
+    if not migration_files:
+        logger.warning(f"⚠️ No migration files found in: {migrations_dir}")
         return
-
-    with open(migration_file, 'r') as f:
-        migration_sql = f.read()
 
     conn = await get_connection()
     try:
-        await conn.execute(migration_sql)
+        for path in migration_files:
+            with open(path, 'r') as f:
+                await conn.execute(f.read())
+            logger.info(f"✅ Applied migration: {os.path.basename(path)}")
         logger.info("✅ Database migrations completed")
     finally:
         await _pool.release(conn)

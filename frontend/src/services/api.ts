@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios'
-import { UploadResponse, TranscribeResponse, StatusResponse, FileWithTranscription, Transcription, AudioFile } from '../types'
+import { UploadResponse, TranscribeResponse, StatusResponse, FileWithTranscription, Transcription, AudioFile, AuthUser, LoginResponse } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
@@ -12,6 +12,13 @@ class ApiService {
       timeout: 30000
     })
 
+    // Attach the bearer token (if logged in) to every request.
+    this.client.interceptors.request.use((config) => {
+      const token = localStorage.getItem('audioscribe_token')
+      if (token) config.headers.Authorization = `Bearer ${token}`
+      return config
+    })
+
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -19,6 +26,22 @@ class ApiService {
         return Promise.reject(error)
       }
     )
+  }
+
+  // --- Auth ---
+  async login(identifier: string, password: string): Promise<LoginResponse> {
+    const response = await this.client.post<LoginResponse>('/auth/login', { identifier, password })
+    return response.data
+  }
+
+  async register(email: string, username: string, password: string): Promise<{ message: string }> {
+    const response = await this.client.post('/auth/register', { email, username, password })
+    return response.data
+  }
+
+  async getMe(): Promise<AuthUser> {
+    const response = await this.client.get<AuthUser>('/auth/me')
+    return response.data
   }
 
   async uploadFile(file: File): Promise<UploadResponse> {
