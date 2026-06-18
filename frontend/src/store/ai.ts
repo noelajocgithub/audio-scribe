@@ -39,7 +39,7 @@ export const useAIStore = create<AIState>((set) => ({
   prompts: [],
   selectedPromptId: null,
   customPrompt: '',
-  selectedModel: 'llama3.1:8b',
+  selectedModel: 'gemma4:e2b',
   streamingOutput: '',
   generationStatus: 'idle',
   currentGenerationId: null,

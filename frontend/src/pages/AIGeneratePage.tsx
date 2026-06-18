@@ -4,8 +4,8 @@ import { useAIStore } from '../store/ai'
 import { streamGenerate, apiService } from '../services/api'
 import { ModelSelector } from '../components/ModelSelector'
 import { StreamingOutput } from '../components/StreamingOutput'
-import { BrainIcon, SparkleIcon, XIcon } from '../components/icons'
-import { displayName } from '../lib/format'
+import { BrainIcon, SparkleIcon, XIcon, CheckIcon } from '../components/icons'
+import { displayName, formatDate, formatDuration } from '../lib/format'
 import { FileWithTranscription } from '../types'
 
 export const AIGeneratePage: React.FC = () => {
@@ -210,21 +210,53 @@ export const AIGeneratePage: React.FC = () => {
       )}
 
       {/* Transcription selector */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Source Transcription</label>
-        <select
-          value={selectedFileId ?? ''}
-          onChange={(e) => {
-            setSelectedFileId(Number(e.target.value))
-            resetGeneration()
-          }}
-          className="input-glass cursor-pointer appearance-none px-4 py-2.5 text-sm"
-          disabled={isGenerating}
-        >
-          {completedFiles.map((f) => (
-            <option key={f.id} value={f.id}>{displayName(f)}</option>
-          ))}
-        </select>
+        <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
+          {completedFiles.map((f) => {
+            const isSelected = f.id === selectedFileId
+            const preview = f.transcription?.transcription_text?.trim()
+            return (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => {
+                  if (!isGenerating) {
+                    setSelectedFileId(f.id)
+                    resetGeneration()
+                  }
+                }}
+                disabled={isGenerating}
+                className={`group relative flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-all ${
+                  isSelected
+                    ? 'border-violet-400/60 bg-violet-500/20 shadow-[0_0_20px_rgba(139,92,246,0.25)] ring-1 ring-violet-400/30'
+                    : 'border-white/5 bg-white/5 hover:border-white/15 hover:bg-white/[0.07]'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`truncate text-sm font-medium ${isSelected ? 'text-white' : 'text-slate-200'}`}>
+                    {displayName(f)}
+                  </span>
+                  {isSelected && (
+                    <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/50">
+                      <CheckIcon size={12} className="text-white" />
+                    </span>
+                  )}
+                </div>
+                {preview && (
+                  <p className={`line-clamp-2 text-xs leading-relaxed ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                    {preview}
+                  </p>
+                )}
+                <div className={`flex items-center gap-3 text-[11px] ${isSelected ? 'text-violet-300/70' : 'text-slate-600'}`}>
+                  <span>{formatDate(f.upload_timestamp)}</span>
+                  {f.duration_seconds && <span>{formatDuration(f.duration_seconds)}</span>}
+                  <span className="uppercase">{f.file_format}</span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Mode toggle */}

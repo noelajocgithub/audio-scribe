@@ -50,6 +50,21 @@ export const StreamingOutput: React.FC<StreamingOutputProps> = ({
         </div>
       )}
 
+      {isStreaming && (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
+              Generating document...
+            </span>
+            <span>{text.length.toLocaleString()} chars</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+            <div className="h-full animate-progress-indeterminate rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-500" />
+          </div>
+        </div>
+      )}
+
       <div
         ref={containerRef}
         className="glass min-h-[200px] max-h-[500px] overflow-y-auto rounded-2xl p-5"

@@ -103,6 +103,16 @@ body {
   animation: slide-in-left 0.25s ease-out;
 }
 
+/* Indeterminate progress bar */
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.animate-progress-indeterminate {
+  width: 50%;
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+
 /* Themed scrollbars to match the dark studio aesthetic. */
 ::-webkit-scrollbar {
   width: 10px;

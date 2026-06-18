@@ -13,10 +13,11 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_TIMEOUT = 120
 
 ALLOWED_MODELS = {
-    "gemma4:2b", "gemma4:4b", "gemma4:12b",
-    "llama3.1:8b",
-    "qwen3:0.5b", "qwen3:1.7b", "qwen3:4b", "qwen3:8b",
+    "gemma4:e2b", "gemma4:e4b", "gemma4:12b",
     "nemotron-mini:4b",
+    "qwen3.6:35b",
+    "qwen3-coder:30b",
+    "gpt-oss:20b",
 }
 
 
