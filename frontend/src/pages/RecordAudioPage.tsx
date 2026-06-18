@@ -2,7 +2,8 @@ import React, { useRef, useState } from 'react'
 import { useStore } from '../store'
 import { apiService } from '../services/api'
 import { VoiceRecorder } from '../components/VoiceRecorder'
-import { UploadIcon, WaveIcon, SaveIcon, XIcon } from '../components/icons'
+import { ProgressBar } from '../components/ProgressBar'
+import { UploadIcon, WaveIcon, SaveIcon, XIcon, StopIcon, CheckIcon } from '../components/icons'
 import { formatBytes } from '../lib/format'
 import { Page } from '../components/Sidebar'
 
@@ -10,10 +11,20 @@ export const RecordAudioPage: React.FC<{ onNavigate: (p: Page) => void }> = ({ o
   const addFile = useStore((s) => s.addFile)
   const addToast = useStore((s) => s.addToast)
   const setSelectedFileId = useStore((s) => s.setSelectedFileId)
+  const files = useStore((s) => s.files)
 
   const [pending, setPending] = useState<{ file: File; url: string } | null>(null)
   const [busy, setBusy] = useState(false)
+  // Id of the file we kicked off transcription for, so we can show live progress
+  // here instead of navigating away. The central poll in App keeps it fresh.
+  const [transcribingId, setTranscribingId] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const transcribingFile = transcribingId != null ? files.find((f) => f.id === transcribingId) : null
+  const tr = transcribingFile?.transcription
+  const status = tr?.status ?? 'Processing'
+  const progress = tr?.progress ?? 0
+  const isProcessing = status === 'Processing' || status === 'Pending'
 
   const setCapture = (file: File) => {
     if (pending) URL.revokeObjectURL(pending.url)
@@ -59,16 +70,42 @@ export const RecordAudioPage: React.FC<{ onNavigate: (p: Page) => void }> = ({ o
       })
 
       discard()
-      if (thenTranscribe) {
-        setSelectedFileId(audio_id)
-        onNavigate('transcribe')
-      }
+      // Stay on this page and surface a live progress bar; the user can jump to
+      // the editor or start another recording from the progress card.
+      if (thenTranscribe) setTranscribingId(audio_id)
     } catch {
       addToast({ type: 'error', message: 'Could not save the audio' })
     } finally {
       setBusy(false)
     }
   }
+
+  const stopTranscription = async () => {
+    if (transcribingId == null) return
+    try {
+      await apiService.cancelTranscription(transcribingId)
+      addToast({ type: 'info', message: 'Stopping transcription…' })
+    } catch {
+      addToast({ type: 'error', message: 'Failed to stop transcription' })
+    }
+  }
+
+  const openInEditor = () => {
+    if (transcribingId == null) return
+    setSelectedFileId(transcribingId)
+    onNavigate('transcribe')
+  }
+
+  const recordAnother = () => setTranscribingId(null)
+
+  const progressLabel =
+    status === 'Completed'
+      ? 'Transcription complete'
+      : status === 'Failed'
+      ? 'Transcription failed'
+      : status === 'Cancelled'
+      ? 'Transcription stopped'
+      : 'Transcribing'
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 md:space-y-6">
@@ -77,7 +114,56 @@ export const RecordAudioPage: React.FC<{ onNavigate: (p: Page) => void }> = ({ o
         <p className="text-sm md:text-base text-slate-400">Capture from your mic or drop in a file, then store it or transcribe it right away.</p>
       </header>
 
-      {!pending ? (
+      {transcribingId != null ? (
+        <section className="glass animate-rise-in space-y-5 p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-semibold text-white">
+              {isProcessing ? 'Transcribing…' : progressLabel}
+            </h2>
+            {!isProcessing && (
+              <button className="btn-ghost px-3" onClick={recordAnother} title="Dismiss">
+                <XIcon size={18} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm">
+            <span className="truncate font-medium text-slate-100">
+              {transcribingFile?.title || transcribingFile?.original_filename || 'Audio file'}
+            </span>
+          </div>
+
+          <ProgressBar value={progress} label={progressLabel} />
+
+          {status === 'Failed' && tr?.error_message && (
+            <p className="text-sm text-rose-300">{tr.error_message}</p>
+          )}
+
+          <div className="flex flex-wrap gap-3 pt-1">
+            {isProcessing ? (
+              <>
+                <button className="btn-ghost flex-1" onClick={stopTranscription}>
+                  <StopIcon size={16} /> Stop
+                </button>
+                <button className="btn-ghost flex-1" onClick={openInEditor}>
+                  <WaveIcon size={16} /> Open in editor
+                </button>
+              </>
+            ) : (
+              <>
+                {status === 'Completed' && (
+                  <button className="btn-grad flex-1" onClick={openInEditor}>
+                    <CheckIcon size={16} /> View transcription
+                  </button>
+                )}
+                <button className="btn-ghost flex-1" onClick={recordAnother}>
+                  <UploadIcon size={16} /> Record another
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+      ) : !pending ? (
         <>
           <section className="glass relative overflow-hidden p-5 md:p-8">
             <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />

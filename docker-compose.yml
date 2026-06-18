@@ -108,13 +108,12 @@ services:
       - audio-scribe-net
     restart: unless-stopped
 
-  # NOTE: The transcription worker uses mlx-whisper, which only runs on Apple
-  # Silicon (the MLX framework has no Linux/CUDA build). It therefore CANNOT run
-  # in this Linux container — run it natively on the host instead:
-  #     ./scripts/run-worker.sh
-  # This service is kept behind the "containerized-worker" profile so a plain
-  # `docker-compose up` does not try to build/start it. Only enable it if you
-  # swap mlx-whisper back out for a Linux-compatible engine (e.g. faster-whisper).
+  # The transcription worker uses faster-whisper (CTranslate2), which runs on
+  # Linux x86_64 with CPU (int8) or NVIDIA GPU (float16), so it CAN run in this
+  # container. It is kept behind the "containerized-worker" profile so a plain
+  # `docker-compose up` does not build/start it — enable with:
+  #     docker-compose --profile containerized-worker up
+  # Alternatively run it natively on the host with ./scripts/run-worker.sh.
   worker:
     profiles: ["containerized-worker"]
     build:
@@ -127,7 +126,7 @@ services:
       MINIO_URL: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      WHISPER_MODEL: ${WHISPER_MODEL:-mlx-community/whisper-large-v3-mlx}
+      WHISPER_MODEL: ${WHISPER_MODEL:-large-v3}
       WHISPER_LANGUAGE: ${WHISPER_LANGUAGE:-auto}
       PYTHONUNBUFFERED: 1
     depends_on:

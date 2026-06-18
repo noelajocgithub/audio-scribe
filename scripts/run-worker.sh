@@ -1,10 +1,13 @@
 #!/bin/bash
 #
-# Run the transcription worker natively on the host (Apple Silicon required).
+# Run the transcription worker natively on the host.
 #
-# mlx-whisper only runs on Apple Silicon, so the worker cannot run in Docker.
-# Start the infra (postgres/redis/minio) with `docker-compose up -d` first, then
-# run this script. It points the worker at the Docker services via localhost.
+# The worker uses faster-whisper (CPU int8, or NVIDIA GPU via float16). Running
+# it natively avoids container overhead and gives it direct access to host
+# CPU/GPU. Start the infra (postgres/redis/minio) with `docker-compose up -d`
+# first, then run this script. It points the worker at the Docker services via
+# localhost. (Alternatively run it in Docker: see the "containerized-worker"
+# profile in docker-compose.yml.)
 #
 # One-time setup:
 #   cd backend
@@ -24,7 +27,7 @@ export MINIO_URL="${MINIO_URL:-http://localhost:9000}"
 export MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-minioadmin}"
 export MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-minioadmin}"
 export MINIO_BUCKET="${MINIO_BUCKET:-audio-files}"
-export WHISPER_MODEL="${WHISPER_MODEL:-mlx-community/whisper-large-v3-mlx}"
+export WHISPER_MODEL="${WHISPER_MODEL:-large-v3}"
 export WHISPER_LANGUAGE="${WHISPER_LANGUAGE:-auto}"
 
 # Activate a local venv if present.
@@ -32,5 +35,5 @@ if [ -f ".venv/bin/activate" ]; then
     source .venv/bin/activate
 fi
 
-echo "🎤 Starting mlx-whisper worker (model: $WHISPER_MODEL)..."
+echo "🎤 Starting faster-whisper worker (model: $WHISPER_MODEL)..."
 exec python worker.py

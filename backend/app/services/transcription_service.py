@@ -2,10 +2,16 @@
 
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.database import execute_insert, execute_update, execute_query
 
 logger = logging.getLogger(__name__)
+
+# A job in 'Processing' whose `updated_at` is older than this is considered
+# stalled: a healthy worker bumps progress (and thus updated_at) every couple of
+# seconds while decoding, so silence this long means no worker is making
+# progress — typically the worker isn't running or has crashed.
+STALL_TIMEOUT_SECONDS = int(os.getenv("TRANSCRIPTION_STALL_TIMEOUT", "300"))
 
 
 class TranscriptionService:
@@ -37,6 +43,10 @@ class TranscriptionService:
     @staticmethod
     async def get_transcription(audio_file_id: int):
         try:
+            # Reconcile dead jobs so the status endpoint never reports a job as
+            # forever 'Processing' when no worker is advancing it.
+            await TranscriptionService.reclaim_stalled_transcriptions()
+
             query = """
                 SELECT id, audio_file_id, status, transcription_text, progress,
                        cancel_requested, started_at, completed_at, error_message,
@@ -158,6 +168,41 @@ class TranscriptionService:
         return False
 
     @staticmethod
+    async def reclaim_stalled_transcriptions() -> int:
+        """Mark transcriptions stuck in 'Processing' as 'Failed'.
+
+        Runs on the read paths the UI polls, so a job never spins at 'Processing'
+        forever when the worker is down. The match is normally zero rows (a live
+        worker keeps updated_at fresh), so this stays cheap. If a worker was
+        merely slow to start, the still-queued job will run and overwrite the
+        Failed state on its next status update — i.e. it self-heals.
+        """
+        cutoff = datetime.utcnow() - timedelta(seconds=STALL_TIMEOUT_SECONDS)
+        message = (
+            f"Transcription stalled — no progress for over "
+            f"{max(1, STALL_TIMEOUT_SECONDS // 60)} min. "
+            f"The transcription worker may not be running."
+        )
+        query = """
+            UPDATE transcriptions
+            SET status = 'Failed', error_message = $1,
+                completed_at = $2, updated_at = $2
+            WHERE status = 'Processing' AND updated_at < $3
+            RETURNING audio_file_id
+        """
+        try:
+            rows = await execute_query(query, message, datetime.utcnow(), cutoff)
+        except Exception as e:
+            # Reconciliation is best-effort; never fail the read it piggybacks on.
+            logger.error(f"❌ Failed to reclaim stalled transcriptions: {e}")
+            return 0
+
+        if rows:
+            ids = [r['audio_file_id'] for r in rows]
+            logger.warning(f"⚠️ Reclaimed {len(ids)} stalled transcription(s): {ids}")
+        return len(rows) if rows else 0
+
+    @staticmethod
     async def get_audio_file(audio_file_id: int):
         try:
             query = """
@@ -180,6 +225,10 @@ class TranscriptionService:
     @staticmethod
     async def list_files_with_transcriptions():
         try:
+            # Reconcile any dead jobs before reporting state (this is the path the
+            # frontend's central poll hits, so it keeps the UI honest).
+            await TranscriptionService.reclaim_stalled_transcriptions()
+
             query = """
                 SELECT
                     af.id, af.original_filename, af.title, af.file_format, af.duration_seconds,

@@ -4,6 +4,7 @@ import asyncio
 import functools
 import logging
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from app.database import init_db, close_db
 from app.services.transcription_service import TranscriptionService
@@ -21,8 +22,11 @@ WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL", "large-v3")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 WHISPER_LANGUAGE = os.getenv("WHISPER_LANGUAGE", "auto")
-CHUNK_SECONDS = int(os.getenv("WHISPER_CHUNK_SECONDS", "60"))
 SAMPLE_RATE = 16000
+
+# How often (wall-clock seconds) the transcription loop polls the cancel flag
+# and reports progress. Throttled to keep DB round-trips modest on long files.
+PROGRESS_INTERVAL_SECONDS = 2.0
 
 _whisper_model: WhisperModel | None = None
 _executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="whisper")
@@ -48,8 +52,19 @@ def get_whisper_model() -> WhisperModel:
     return _whisper_model
 
 
-def _transcribe_file(audio_path: str, language: str | None) -> tuple[str, str | None]:
-    """Transcribe an audio file using faster-whisper. Returns (text, detected_language)."""
+def _transcribe_file(
+    audio_path: str,
+    language: str | None,
+    on_progress,
+    should_cancel,
+) -> tuple[str, str | None, bool]:
+    """Transcribe an audio file using faster-whisper.
+
+    faster-whisper yields segments lazily, so iterating them lets us report
+    incremental progress (via ``on_progress(fraction)``) and honour a
+    cancellation request mid-run (via ``should_cancel()``) instead of only
+    before the work starts. Returns (text, detected_language, cancelled).
+    """
     model = get_whisper_model()
     segments, info = model.transcribe(
         audio_path,
@@ -61,11 +76,30 @@ def _transcribe_file(audio_path: str, language: str | None) -> tuple[str, str | 
             speech_pad_ms=200,
         ),
     )
-    texts = []
+
+    total_duration = info.duration or 0.0
+    texts: list[str] = []
+    cancelled = False
+    last_check = 0.0
+
     for segment in segments:
-        texts.append(segment.text.strip())
-    transcription = " ".join(t for t in texts if t)
-    return transcription, info.language
+        # Throttle DB round-trips: poll the cancel flag and push progress at
+        # most once per PROGRESS_INTERVAL_SECONDS of wall-clock time.
+        now = time.monotonic()
+        if now - last_check >= PROGRESS_INTERVAL_SECONDS:
+            last_check = now
+            if should_cancel():
+                cancelled = True
+                break
+            if total_duration > 0:
+                on_progress(min(1.0, segment.end / total_duration))
+
+        text = segment.text.strip()
+        if text:
+            texts.append(text)
+
+    transcription = " ".join(texts)
+    return transcription, info.language, cancelled
 
 
 async def transcribe_audio(ctx, audio_id: int) -> dict:
@@ -106,9 +140,37 @@ async def transcribe_audio(ctx, audio_id: int) -> dict:
         logger.info(f"Transcribing with faster-whisper ({WHISPER_MODEL_SIZE})...")
         await TranscriptionService.update_progress(audio_id, 10)
 
-        transcription_text, detected_language = await _run_blocking(
-            _transcribe_file, downsampled_path, language
+        # The transcription runs in a worker thread, so bridge its progress and
+        # cancel checks back to this event loop via run_coroutine_threadsafe.
+        loop = asyncio.get_running_loop()
+
+        def on_progress(fraction: float) -> None:
+            # Map transcription completion (0..1) onto the 10..90 band; the
+            # download/downsample took the first 10%, finalisation the last 10%.
+            progress = 10 + int(fraction * 80)
+            asyncio.run_coroutine_threadsafe(
+                TranscriptionService.update_progress(audio_id, progress), loop
+            )
+
+        def should_cancel() -> bool:
+            future = asyncio.run_coroutine_threadsafe(
+                TranscriptionService.is_cancel_requested(audio_id), loop
+            )
+            return future.result()
+
+        transcription_text, detected_language, cancelled = await _run_blocking(
+            _transcribe_file, downsampled_path, language, on_progress, should_cancel
         )
+
+        if cancelled:
+            logger.info(f"Transcription cancelled mid-run: audio_id={audio_id}")
+            await TranscriptionService.update_transcription_status(
+                audio_id,
+                "Cancelled",
+                transcription_text=transcription_text or None,
+            )
+            cleanup_file(downsampled_path)
+            return {"audio_id": audio_id, "status": "Cancelled"}
 
         await TranscriptionService.update_progress(audio_id, 90)
 
@@ -177,8 +239,12 @@ class WorkerSettings:
     functions = [transcribe_audio]
     on_startup = startup
     on_shutdown = shutdown
-    job_timeout = 3600
-    max_tries = 3
+    # CPU transcription of long audio can run near (or over) real-time, so allow
+    # generous headroom — default 6h, override with WHISPER_JOB_TIMEOUT.
+    job_timeout = int(os.getenv("WHISPER_JOB_TIMEOUT", "21600"))
+    # A timeout/failure on an hour-long file should not silently re-burn hours
+    # re-transcribing it; surface the failure on the first attempt instead.
+    max_tries = 1
     result_ttl = 86400
 
 
