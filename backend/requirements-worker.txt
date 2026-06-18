@@ -1,11 +1,9 @@
-# Transcription worker dependencies (Apple Silicon / macOS only).
+# Transcription worker dependencies (Linux x86_64, CPU or CUDA).
 #
-# mlx-whisper is built on Apple's MLX framework and only runs on Apple Silicon,
-# so the worker must run natively on the host — it cannot run in the Linux API
-# Docker image. Install with:  pip install -r requirements-worker.txt
+# faster-whisper uses CTranslate2 and runs on CPU (int8) or NVIDIA GPU (float16).
+# Install with:  pip install -r requirements-worker.txt
 #
 # Includes the base API deps because the worker imports app.database / app.services.
 -r requirements.txt
 
-mlx-whisper>=0.4.0
-numpy>=1.24
+faster-whisper>=1.0.0

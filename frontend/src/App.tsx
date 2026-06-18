@@ -6,6 +6,8 @@ import { Sidebar, Page } from './components/Sidebar'
 import { RecordAudioPage } from './pages/RecordAudioPage'
 import { TranscribeAudioPage } from './pages/TranscribeAudioPage'
 import { SavedTranscriptionsPage } from './pages/SavedTranscriptionsPage'
+import { AIGeneratePage } from './pages/AIGeneratePage'
+import { AdminPromptsPage } from './pages/AdminPromptsPage'
 import { LoginPage } from './pages/LoginPage'
 import { Toast } from './components/Toast'
 import { SparkleIcon } from './components/icons'
@@ -92,11 +94,13 @@ function App() {
         counts={{ transcribe: files.length, saved: files.length }}
       />
 
-      <main className="relative z-10 flex-1 overflow-y-auto px-6 py-8 lg:px-10">
+      <main className="relative z-10 flex-1 overflow-y-auto px-4 py-6 pb-24 md:px-6 md:py-8 md:pb-8 lg:px-10">
         <div className="mx-auto max-w-6xl">
           {page === 'record' && <RecordAudioPage onNavigate={setPage} />}
           {page === 'transcribe' && <TranscribeAudioPage onNavigate={setPage} />}
           {page === 'saved' && <SavedTranscriptionsPage onNavigate={setPage} />}
+          {page === 'generate' && <AIGeneratePage />}
+          {page === 'admin-prompts' && <AdminPromptsPage />}
         </div>
       </main>
 

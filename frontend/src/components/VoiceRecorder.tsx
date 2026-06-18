@@ -123,9 +123,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onRecordingComplet
   const live = isRecording && !isPaused
 
   return (
-    <div className="flex flex-col items-center gap-6 py-4">
+    <div className="flex flex-col items-center gap-4 md:gap-6 py-4">
       {/* Pulsing mic orb */}
-      <div className="relative flex h-40 w-40 items-center justify-center">
+      <div className="relative flex h-28 w-28 md:h-40 md:w-40 items-center justify-center">
         {live && (
           <>
             <span className="absolute inset-0 animate-pulse-ring rounded-full bg-fuchsia-500/30" />
@@ -133,23 +133,24 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onRecordingComplet
           </>
         )}
         <div
-          className={`flex h-32 w-32 items-center justify-center rounded-full text-white transition-all duration-300 ${
+          className={`flex h-24 w-24 md:h-32 md:w-32 items-center justify-center rounded-full text-white transition-all duration-300 ${
             isRecording
               ? 'bg-gradient-to-br from-rose-500 via-fuchsia-500 to-violet-500 shadow-glow'
               : 'bg-gradient-to-br from-violet-500/80 to-fuchsia-500/80 shadow-lift'
           }`}
         >
-          <MicIcon size={48} />
+          <MicIcon size={36} className="md:hidden" />
+          <MicIcon size={48} className="hidden md:block" />
         </div>
       </div>
 
-      <div className="font-display text-4xl font-bold tabular-nums text-white">
+      <div className="font-display text-3xl md:text-4xl font-bold tabular-nums text-white">
         {formatClock(duration)}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
         {!isRecording ? (
-          <button className="btn-grad px-6 py-3 text-base" onClick={startRecording}>
+          <button className="btn-grad px-5 py-3 text-sm md:px-6 md:text-base" onClick={startRecording}>
             <MicIcon size={18} /> Start Recording
           </button>
         ) : (

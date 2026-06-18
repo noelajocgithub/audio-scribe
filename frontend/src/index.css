@@ -89,6 +89,20 @@ body {
   box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.35);
 }
 
+/* Safe area for mobile bottom nav (notch devices) */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Slide-in animation for mobile drawer */
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slide-in-left 0.25s ease-out;
+}
+
 /* Themed scrollbars to match the dark studio aesthetic. */
 ::-webkit-scrollbar {
   width: 10px;

@@ -138,3 +138,74 @@ class StatusResponse(BaseModel):
     error_message: Optional[str] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+
+
+# --- AI Generation models -----------------------------------------------------
+
+class PromptTemplateCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=80)
+    description: Optional[str] = Field(None, max_length=200)
+    template: str = Field(..., min_length=10)
+    category: str = Field(default="custom", max_length=50)
+
+
+class PromptTemplateUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=80)
+    description: Optional[str] = Field(None, max_length=200)
+    template: Optional[str] = Field(None, min_length=10)
+    category: Optional[str] = Field(None, max_length=50)
+    is_active: Optional[bool] = None
+
+
+class PromptTemplateOut(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    category: str
+
+
+class PromptTemplateAdminOut(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    template: str
+    category: str
+    is_active: bool
+    created_by: Optional[int] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class GenerateRequest(BaseModel):
+    transcription_id: Optional[int] = None
+    prompt_template_id: Optional[str] = None
+    custom_prompt: Optional[str] = Field(None, max_length=2000)
+    model: str = Field(default="llama3.1:8b", max_length=60)
+    transcription_override: Optional[str] = None
+
+
+class SaveDocumentRequest(BaseModel):
+    document_title: str = Field(..., min_length=1, max_length=200)
+
+
+class GenerationOut(BaseModel):
+    id: str
+    transcription_id: Optional[int] = None
+    prompt_template_id: Optional[str] = None
+    ollama_model: str
+    output: Optional[str] = None
+    status: str
+    error_message: Optional[str] = None
+    is_saved: bool = False
+    document_title: Optional[str] = None
+    saved_at: Optional[datetime] = None
+    created_at: datetime
+
+
+class SavedDocumentOut(BaseModel):
+    id: str
+    document_title: Optional[str] = None
+    ollama_model: str
+    prompt_template_id: Optional[str] = None
+    saved_at: Optional[datetime] = None
+    transcription_id: Optional[int] = None

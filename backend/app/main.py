@@ -8,7 +8,7 @@ import logging
 import os
 
 from app.database import init_db, close_db, run_migrations
-from app.routes import audio_routes, transcription_routes, auth_routes, user_routes
+from app.routes import audio_routes, transcription_routes, auth_routes, user_routes, prompt_routes, generation_routes
 from app.services.user_service import UserService
 from app.auth.security import hash_password
 
@@ -78,6 +78,8 @@ app.include_router(auth_routes.router, prefix="/api", tags=["auth"])
 app.include_router(user_routes.router, prefix="/api", tags=["users"])
 app.include_router(audio_routes.router, prefix="/api", tags=["audio"])
 app.include_router(transcription_routes.router, prefix="/api", tags=["transcription"])
+app.include_router(prompt_routes.router, prefix="/api", tags=["prompts"])
+app.include_router(generation_routes.router, prefix="/api", tags=["generation"])
 
 
 @app.get("/api/health")

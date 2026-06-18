@@ -71,21 +71,21 @@ export const RecordAudioPage: React.FC<{ onNavigate: (p: Page) => void }> = ({ o
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-5 md:space-y-6">
       <header className="space-y-1">
-        <h1 className="font-display text-3xl font-bold gradient-text">Record Audio</h1>
-        <p className="text-slate-400">Capture from your mic or drop in a file, then store it or transcribe it right away.</p>
+        <h1 className="font-display text-2xl md:text-3xl font-bold gradient-text">Record Audio</h1>
+        <p className="text-sm md:text-base text-slate-400">Capture from your mic or drop in a file, then store it or transcribe it right away.</p>
       </header>
 
       {!pending ? (
         <>
-          <section className="glass relative overflow-hidden p-8">
+          <section className="glass relative overflow-hidden p-5 md:p-8">
             <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-fuchsia-500/20 blur-3xl" />
             <VoiceRecorder onRecordingComplete={setCapture} />
           </section>
 
-          <div className="flex items-center gap-4 text-xs uppercase tracking-widest text-slate-500">
+          <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-slate-500">
             <div className="h-px flex-1 bg-white/10" /> or upload a file <div className="h-px flex-1 bg-white/10" />
           </div>
 
@@ -93,13 +93,13 @@ export const RecordAudioPage: React.FC<{ onNavigate: (p: Page) => void }> = ({ o
             onDrop={onDrop}
             onDragOver={(e) => e.preventDefault()}
             onClick={() => fileInputRef.current?.click()}
-            className="glass-soft group cursor-pointer border-dashed border-white/20 p-10 text-center transition hover:border-violet-400/50 hover:bg-white/[0.06]"
+            className="glass-soft group cursor-pointer border-dashed border-white/20 p-6 md:p-10 text-center transition hover:border-violet-400/50 hover:bg-white/[0.06]"
           >
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-violet-300 transition group-hover:scale-110">
-              <UploadIcon size={26} />
+            <div className="mx-auto mb-3 flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-white/5 text-violet-300 transition group-hover:scale-110">
+              <UploadIcon size={24} />
             </div>
-            <div className="font-semibold text-slate-100">Drag &amp; drop audio, or click to browse</div>
-            <div className="mt-1 text-sm text-slate-400">MP3, WAV, M4A, OGG, AAC, WEBM · up to 500MB</div>
+            <div className="text-sm md:text-base font-semibold text-slate-100">Drag &amp; drop audio, or click to browse</div>
+            <div className="mt-1 text-xs md:text-sm text-slate-400">MP3, WAV, M4A, OGG, AAC, WEBM · up to 500MB</div>
             <input
               ref={fileInputRef}
               type="file"

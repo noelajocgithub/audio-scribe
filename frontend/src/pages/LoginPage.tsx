@@ -48,7 +48,7 @@ export const LoginPage: React.FC = () => {
       <div className="pointer-events-none absolute -right-32 bottom-0 h-[34rem] w-[34rem] animate-float-slow rounded-full bg-fuchsia-600/20 blur-3xl" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 animate-float rounded-full bg-cyan-500/10 blur-3xl" />
 
-      <div className="relative z-10 grid w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 shadow-lift md:grid-cols-2">
+      <div className="relative z-10 grid w-full max-w-4xl overflow-hidden rounded-2xl md:rounded-3xl border border-white/10 shadow-lift md:grid-cols-2">
         {/* Brand / hero panel */}
         <div className="relative hidden flex-col justify-between bg-gradient-to-br from-violet-600/30 via-fuchsia-600/20 to-cyan-500/20 p-10 backdrop-blur-xl md:flex">
           <div className="flex items-center gap-3">
@@ -68,8 +68,6 @@ export const LoginPage: React.FC = () => {
               <li className="flex items-center gap-3"><ArchiveIcon size={18} /> Edit & keep a searchable library</li>
             </ul>
           </div>
-
-          <div className="text-xs text-slate-300/70">Runs locally on Apple Silicon · mlx-whisper</div>
         </div>
 
         {/* Form panel */}

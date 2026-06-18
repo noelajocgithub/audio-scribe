@@ -20,18 +20,18 @@ export const TranscribeAudioPage: React.FC<{ onNavigate: (p: Page) => void }> = 
   const selected = files.find((f) => f.id === selectedFileId) || null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <header className="space-y-1">
-        <h1 className="font-display text-3xl font-bold gradient-text">Transcribe Audio</h1>
-        <p className="text-slate-400">Pick any recording or upload, run transcription, then edit and save.</p>
+        <h1 className="font-display text-2xl md:text-3xl font-bold gradient-text">Transcribe Audio</h1>
+        <p className="text-sm md:text-base text-slate-400">Pick any recording or upload, run transcription, then edit and save.</p>
       </header>
 
       {files.length === 0 ? (
         <EmptyState onNavigate={onNavigate} />
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[20rem_1fr]">
+        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[20rem_1fr] lg:gap-6">
           {/* File list */}
-          <div className="glass flex max-h-[72vh] flex-col p-3">
+          <div className="glass flex max-h-[40vh] lg:max-h-[72vh] flex-col p-3">
             <div className="px-2 py-2 text-xs font-semibold uppercase tracking-widest text-slate-400">
               All Audio · {files.length}
             </div>
@@ -48,7 +48,7 @@ export const TranscribeAudioPage: React.FC<{ onNavigate: (p: Page) => void }> = 
           </div>
 
           {/* Workspace */}
-          <div className="glass min-h-[72vh] p-6">
+          <div className="glass min-h-[50vh] lg:min-h-[72vh] p-4 md:p-6">
             {selected ? (
               <Workspace key={selected.id} file={selected} />
             ) : (

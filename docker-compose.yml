@@ -90,6 +90,7 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-noel1999}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       PYTHONUNBUFFERED: 1
     ports:
       - "8000:8000"
@@ -145,6 +146,17 @@ services:
       - audio-scribe-net
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: audio-scribe-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - audio-scribe-net
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
@@ -162,6 +174,7 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+  ollama_data:
 
 networks:
   audio-scribe-net:

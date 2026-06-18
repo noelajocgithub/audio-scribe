@@ -26,10 +26,10 @@ export const SavedTranscriptionsPage: React.FC<{ onNavigate: (p: Page) => void }
   }, [open])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <header className="space-y-1">
-        <h1 className="font-display text-3xl font-bold gradient-text">Saved Transcriptions</h1>
-        <p className="text-slate-400">Your full library. Open any item to read or edit its transcription.</p>
+        <h1 className="font-display text-2xl md:text-3xl font-bold gradient-text">Saved Transcriptions</h1>
+        <p className="text-sm md:text-base text-slate-400">Your full library. Open any item to read or edit its transcription.</p>
       </header>
 
       {files.length === 0 ? (
@@ -52,16 +52,16 @@ export const SavedTranscriptionsPage: React.FC<{ onNavigate: (p: Page) => void }
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpenId(null)} />
-          <div className="glass animate-rise-in relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden p-6 shadow-lift">
+          <div className="glass animate-rise-in relative flex max-h-[92vh] md:max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-lift">
             <button
               onClick={() => setOpenId(null)}
-              className="absolute right-4 top-4 z-10 rounded-lg p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white"
+              className="absolute right-3 top-3 md:right-4 md:top-4 z-10 rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
             >
-              <XIcon size={18} />
+              <XIcon size={20} />
             </button>
-            <div className="overflow-y-auto pr-1">
+            <div className="overflow-y-auto pr-1 pt-2">
               <Workspace key={open.id} file={open} />
             </div>
           </div>

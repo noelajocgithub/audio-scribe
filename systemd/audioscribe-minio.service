@@ -1,0 +1,16 @@
+[Unit]
+Description=Audio Scribe MinIO Storage
+After=network.target
+
+[Service]
+Type=simple
+User=talinoserver4
+Group=talinoserver4
+Environment=MINIO_ROOT_USER=minioadmin
+Environment=MINIO_ROOT_PASSWORD=minioadmin
+ExecStart=/usr/local/bin/minio server /home/talinoserver4/minio-data --console-address :9001
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -94,3 +94,56 @@ export interface Store {
   addToast: (toast: Omit<Toast, 'id'>) => void
   removeToast: (id: string) => void
 }
+
+// --- AI Generation types ---
+
+export type OllamaModel =
+  | 'gemma4:2b' | 'gemma4:4b' | 'gemma4:12b'
+  | 'llama3.1:8b'
+  | 'qwen3:0.5b' | 'qwen3:1.7b' | 'qwen3:4b' | 'qwen3:8b'
+  | 'nemotron-mini:4b'
+
+export const OLLAMA_MODELS: OllamaModel[] = [
+  'gemma4:2b', 'gemma4:4b', 'gemma4:12b',
+  'llama3.1:8b',
+  'qwen3:0.5b', 'qwen3:1.7b', 'qwen3:4b', 'qwen3:8b',
+  'nemotron-mini:4b',
+]
+
+export interface PromptTemplate {
+  id: string
+  title: string
+  description?: string
+  category: string
+}
+
+export interface PromptTemplateAdmin extends PromptTemplate {
+  template: string
+  is_active: boolean
+  created_by?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SavedDocument {
+  id: string
+  document_title: string | null
+  ollama_model: string
+  prompt_template_id: string | null
+  saved_at: string | null
+  transcription_id: number | null
+}
+
+export interface AIGeneration {
+  id: string
+  transcription_id?: number
+  prompt_template_id?: string
+  ollama_model: string
+  output?: string
+  status: 'pending' | 'streaming' | 'completed' | 'failed'
+  error_message?: string
+  is_saved: boolean
+  document_title?: string | null
+  saved_at?: string | null
+  created_at: string
+}

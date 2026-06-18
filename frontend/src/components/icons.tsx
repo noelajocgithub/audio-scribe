@@ -133,3 +133,36 @@ export const ChevronIcon: React.FC<IconProps> = ({ size = 20, ...p }) => (
     <polyline points="9 18 15 12 9 6" />
   </svg>
 )
+
+export const MenuIcon: React.FC<IconProps> = ({ size = 20, ...p }) => (
+  <svg {...base(size)} {...p}>
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+)
+
+export const BrainIcon: React.FC<IconProps> = ({ size = 20, ...p }) => (
+  <svg {...base(size)} {...p}>
+    <path d="M12 2a5 5 0 0 1 4.5 2.8A4 4 0 0 1 20 9a4 4 0 0 1-1.5 3.1A5 5 0 0 1 12 22a5 5 0 0 1-6.5-9.9A4 4 0 0 1 4 9a4 4 0 0 1 3.5-4.2A5 5 0 0 1 12 2z" />
+    <path d="M12 2v20" />
+    <path d="M8 6c2 1 4 1 6 0" />
+    <path d="M8 18c2-1 4-1 6 0" />
+    <path d="M6.5 10c2 .5 4 .5 6 0" />
+    <path d="M11.5 14c2 .5 4 .5 6 0" />
+  </svg>
+)
+
+export const SettingsIcon: React.FC<IconProps> = ({ size = 20, ...p }) => (
+  <svg {...base(size)} {...p}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1.08 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1.08H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+)
+
+export const CopyIcon: React.FC<IconProps> = ({ size = 20, ...p }) => (
+  <svg {...base(size)} {...p}>
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+)

@@ -1,0 +1,17 @@
+[Unit]
+Description=Audio Scribe Transcription Worker
+After=network.target postgresql.service redis-server.service audioscribe-minio.service
+Requires=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=talinoserver4
+Group=talinoserver4
+WorkingDirectory=/home/talinoserver4/Documents/audio-scribe/backend
+EnvironmentFile=/home/talinoserver4/Documents/audio-scribe/backend/.env
+ExecStart=/home/talinoserver4/Documents/audio-scribe/backend/.venv/bin/python worker.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

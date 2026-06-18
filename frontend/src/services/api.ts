@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios'
-import { UploadResponse, TranscribeResponse, StatusResponse, FileWithTranscription, Transcription, AudioFile, AuthUser, LoginResponse } from '../types'
+import { UploadResponse, TranscribeResponse, StatusResponse, FileWithTranscription, Transcription, AudioFile, AuthUser, LoginResponse, PromptTemplate, PromptTemplateAdmin, AIGeneration, SavedDocument } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
@@ -121,6 +121,140 @@ class ApiService {
       return false
     }
   }
+
+  // --- AI Generation ---
+
+  async getPrompts(): Promise<PromptTemplate[]> {
+    const response = await this.client.get<PromptTemplate[]>('/v1/prompts/')
+    return response.data
+  }
+
+  async getPromptsAdmin(): Promise<PromptTemplateAdmin[]> {
+    const response = await this.client.get<PromptTemplateAdmin[]>('/v1/prompts/admin')
+    return response.data
+  }
+
+  async createPrompt(data: { title: string; description?: string; template: string; category: string }): Promise<PromptTemplateAdmin> {
+    const response = await this.client.post<PromptTemplateAdmin>('/v1/prompts/', data)
+    return response.data
+  }
+
+  async updatePrompt(id: string, data: Partial<{ title: string; description: string; template: string; category: string; is_active: boolean }>): Promise<PromptTemplateAdmin> {
+    const response = await this.client.put<PromptTemplateAdmin>(`/v1/prompts/${id}`, data)
+    return response.data
+  }
+
+  async deletePrompt(id: string): Promise<void> {
+    await this.client.delete(`/v1/prompts/${id}`)
+  }
+
+  async getGenerations(): Promise<AIGeneration[]> {
+    const response = await this.client.get<AIGeneration[]>('/v1/generate/')
+    return response.data
+  }
+
+  async getGeneration(id: string): Promise<AIGeneration> {
+    const response = await this.client.get<AIGeneration>(`/v1/generate/${id}`)
+    return response.data
+  }
+
+  async saveGeneration(id: string, document_title: string): Promise<void> {
+    await this.client.patch(`/v1/generate/${id}/save`, { document_title })
+  }
+
+  async unsaveGeneration(id: string): Promise<void> {
+    await this.client.patch(`/v1/generate/${id}/unsave`)
+  }
+
+  async getSavedDocuments(limit = 20, offset = 0): Promise<SavedDocument[]> {
+    const response = await this.client.get<SavedDocument[]>(`/v1/generate/saved?limit=${limit}&offset=${offset}`)
+    return response.data
+  }
+
+  async downloadPdf(generationId: string, title: string): Promise<void> {
+    const token = localStorage.getItem('audioscribe_token')
+    const res = await fetch(`${API_URL}/v1/generate/${generationId}/download/pdf`, {
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    })
+    if (!res.ok) throw new Error('PDF download failed')
+    const blob = await res.blob()
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    const date = new Date().toISOString().split('T')[0]
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${slug}_${date}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 }
 
 export const apiService = new ApiService()
+
+export async function streamGenerate(
+  payload: {
+    transcription_id?: number
+    prompt_template_id?: string
+    custom_prompt?: string
+    model: string
+    transcription_override?: string
+  },
+  onToken: (token: string) => void,
+  onDone: (generationId: string) => void,
+  onError: (err: string) => void,
+): Promise<void> {
+  const token = localStorage.getItem('audioscribe_token')
+  const response = await fetch(`${API_URL}/v1/generate/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Generation failed' }))
+    onError(err.detail || `HTTP ${response.status}`)
+    return
+  }
+
+  const reader = response.body?.getReader()
+  if (!reader) {
+    onError('No response stream available')
+    return
+  }
+
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() || ''
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue
+      const jsonStr = line.slice(6).trim()
+      if (!jsonStr) continue
+
+      try {
+        const data = JSON.parse(jsonStr)
+        if (data.token) {
+          onToken(data.token)
+        } else if (data.done) {
+          onDone(data.generation_id)
+          return
+        } else if (data.error) {
+          onError(data.error)
+          return
+        }
+      } catch {
+        continue
+      }
+    }
+  }
+}

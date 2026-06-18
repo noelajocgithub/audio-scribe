@@ -50,25 +50,25 @@ export const Workspace: React.FC<{ file: FileWithTranscription }> = ({ file }) =
   return (
     <div className="flex h-full flex-col gap-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="mb-1 flex items-center gap-3">
-            <h2 className="font-display truncate text-2xl font-bold text-white">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <h2 className="font-display truncate text-lg md:text-2xl font-bold text-white">
               {displayName(file)}
             </h2>
             <StatusBadge status={status} />
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs md:text-sm text-slate-400">
             <span>{file.file_format?.toUpperCase()}</span>
             <span>{formatBytes(file.file_size_bytes)}</span>
             <span>{formatDuration(file.duration_seconds)}</span>
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <button className="btn-ghost px-3" onClick={() => setRenaming(true)} title="Rename">
+        <div className="flex shrink-0 gap-1.5 md:gap-2">
+          <button className="btn-ghost px-2.5 md:px-3" onClick={() => setRenaming(true)} title="Rename">
             <EditIcon size={18} />
           </button>
-          <button className="btn-danger px-3" onClick={() => setConfirmDelete(true)} title="Delete">
+          <button className="btn-danger px-2.5 md:px-3" onClick={() => setConfirmDelete(true)} title="Delete">
             <TrashIcon size={18} />
           </button>
         </div>
